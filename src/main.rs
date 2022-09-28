@@ -20,28 +20,21 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-use rand::Rng;
-use regex::Regex;
+use num_cpus;
 use std::io;
 use std::io::Write;
 use std::thread;
 use std::process::exit;
 use std::time::Instant;
-use num_cpus;
+use std::ops::AddAssign;
+use regex::Regex;
+use rand::rngs::OsRng;
 use curve25519_dalek::scalar::Scalar;
 use monero::{PublicKey, PrivateKey, Address, Network};
 
 fn main() {
-	// Interations or guesses
-	let mut tries = 0;
-
-	// Monero network = Mainnet
-	let network = Network::Mainnet;
-
-	// Detect core count
+	// Ask user for core count
 	let detected_cores: u32 = num_cpus::get().try_into().unwrap();
-
-	// Ask user on how many cores to use
 	let mut input = String::new();
 	let cores: u32;
 	print!("How many cores to use? [0-{}] (0 = all cores): ", detected_cores);
@@ -60,44 +53,44 @@ fn main() {
 
 	// Get pattern type (prefix|regex)
 	println!("");
-	println!("What type to look for? [prefix|regex]");
-	println!("    - Prefix: starts from 3rd character, ASCII only: \"hinto\" = [48hinto...]");
-	println!("    - Regex: starts from 1st character, Rust regex: \"^4[1-9]h(1|i)nto.*$\" = [44hinto...|42h1nto]");
-	println!("    - There is no speed difference between these two.");
+	println!("What type to look for? [first|third|full]");
+	println!("    - Third: matches 3rd-43rd character");
+	println!("    - First: matches 1st-43rd character");
+	println!("    - Full: matches 1st-95th character");
 	print!("Type: ");
 	io::stdout().flush().unwrap();
 	let mut input = String::new();
 	let pattern_type;
     io::stdin().read_line(&mut input).expect("Failed read line");
-	if Regex::is_match(&Regex::new("reg").unwrap(), &input) {
-		pattern_type = "regex";
-	} else {
-		pattern_type = "prefix";
+	// Strip newline off input
+	if input.ends_with('\n') {
+		input.pop();
+		if input.ends_with('\r') {
+			input.pop();
+		}
 	}
-
-	println!("Using pattern type: [{}]", pattern_type);
+	if Regex::is_match(&Regex::new("^(F|f)(I|i).*$").unwrap(), &input) {
+		pattern_type = "first";
+	} else if Regex::is_match(&Regex::new("^(F|f)(U|u).*$").unwrap(), &input) {
+		pattern_type = "full";
+	} else {
+		pattern_type = "third";
+	}
+	println!("Using type: [{}]", pattern_type);
 
 	// Get address pattern
 	println!("");
-	if pattern_type == "regex" {
-		println!("What pattern to look for?");
-		println!("    - Must not include 'I', 'O', 'l' ");
-		println!("    - Will start from the 1st character");
-		println!("    - [48hinto...] would match if \"^48hinto.*$\" was typed");
-		println!("    - [48hinto...|44h1nto...] would match if \"^4(4|8)h(i|1)nto.*$\" was typed");
-		println!("    - Rust regex patterns are used: https://docs.rs/regex/latest/regex ");
-		print!("Pattern: ");
-	} else {
-		println!("What pattern to look for?");
-		println!("    - Must be ASCII and not include 'I', 'O', 'l' ");
-		println!("    - Will always start from the 3rd character, [48...]");
-		println!("    - [48hinto...] would match if \"hinto\" was typed");
-		print!("Pattern: ");
-	}
+	println!("What pattern to look for?");
+	println!("    - Must not include 'I', 'O', 'l' ");
+	println!("    - Must be ASCII or a Regex pattern");
+	println!("    - [48hinto...] would match if \"^48hinto.*$\" was typed");
+	println!("    - [44hinto...|48h1nto...] would match if \"^4(4|8)h(i|1)nto.*$\" was typed");
+	println!("    - Rust regex patterns are used: https://docs.rs/regex/latest/regex ");
+	print!("Pattern: ");
 	io::stdout().flush().unwrap();
 	let mut input = String::new();
     io::stdin().read_line(&mut input).expect("Failed read line");
-	// strip newline
+	// Strip newline off input
 	if input.ends_with('\n') {
 		input.pop();
 		if input.ends_with('\r') {
@@ -105,44 +98,72 @@ fn main() {
 		}
 	}
 	let pattern;
-	if pattern_type == "regex" {
-		pattern = format!("{}", input);
-	} else {
+	if pattern_type == "third" {
 		pattern = format!("^..{}.*$", input);
 		if Regex::is_match(&Regex::new("(I|O|l)").unwrap(), &pattern) {
 			println!("Pattern cannot contain 'I', 'O', or 'l'");
 			exit(1);
 		}
+	} else {
+		pattern = format!("{}", input);
 	}
 
-	// Start
+	// Print input values
 	println!("");
 	print!("Using [{}] cores, looking for pattern [{}] with type [{}]... ", cores, Regex::new(&pattern).unwrap(), pattern_type);
 	io::stdout().flush().unwrap();
 
-	// Set timer
-	let now = Instant::now();
+	// Set runtime values
+	let one = Scalar::one();        // Set scalar with value [1]
+	let mut tries = 1;              // Interations
+	let network = Network::Mainnet; // Monero network = Mainnet
+	let now = Instant::now();       // Set timer
 
-	for _i in 1..=cores {
-		let regex = Regex::new(&pattern).unwrap();
-		thread::spawn(move|| loop {
-			// Generate [32] random [u8] bytes to act as scalar
-			let private = PrivateKey { scalar: Scalar::from_bytes_mod_order(rand::thread_rng().gen::<[u8; 32]>()), };
-			let public = PublicKey::from_private_key(&private);
-			if Regex::is_match(&regex, &Address::standard(network, public, public).to_string()) {
-				println!("");
-				println!("------------------------------------------------------------------------------------------------------------------");
-				println!("Found in [{}] tries in [{:?}]!\n", tries * cores, now.elapsed());
-			    println!("Private Spend Key | {}", private);
-			    println!("Public Spend Key  | {}", public);
-			    println!("Standard Address  | {}\n", Address::standard(network, public, public).to_string());
-				println!("Recover with: monero-wallet-cli --generate-from-spend-key");
-				println!("-------------------------------------------------------------------------------------------------------------------");
-				exit(0);
-			} else {
+	// Start
+	// [full] pattern 1-95 char matching
+	if pattern_type == "full" {
+		for _i in 1..=cores {
+			let regex = Regex::new(&pattern).unwrap();
+			let mut scalar = Scalar::random(&mut OsRng);
+			thread::spawn(move|| loop {
+				let private = PrivateKey { scalar: scalar, };
+				let public = PublicKey::from_private_key(&private);
+				if Regex::is_match(&regex, &Address::standard(network, public, public).to_string()) {
+					println!("\n");
+					println!("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+					println!("Found in [{}] tries in [{:?}]!\n", tries * cores, now.elapsed());
+				    println!("Private Spend Key | {}", private);
+				    println!("Standard Address  | {}\n", Address::standard(network, public, public).to_string());
+					println!("Recover with: monero-wallet-cli --generate-from-spend-key");
+					println!("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+					exit(0);
+				}
 				tries += 1;
-			}
-		});
+				scalar.add_assign(one);
+			});
+		}
+	// else, 1-43/3-43 char matching
+	} else {
+		for _i in 1..=cores {
+			let regex = Regex::new(&pattern).unwrap();
+			let mut scalar = Scalar::random(&mut OsRng);
+			thread::spawn(move|| loop {
+				let private = PrivateKey { scalar: scalar, };
+				if Regex::is_match(&regex, &base58_monero::encode(&[[18].as_ref(), &PublicKey::from_private_key(&private).to_bytes()].concat()).unwrap()) {
+					let public = PublicKey::from_private_key(&private);
+					println!("\n");
+					println!("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+					println!("Found in [{}] tries in [{:?}]!\n", tries * cores, now.elapsed());
+				    println!("Private Spend Key | {}", private);
+				    println!("Standard Address  | {}\n", Address::standard(network, public, public).to_string());
+					println!("Recover with: monero-wallet-cli --generate-from-spend-key");
+					println!("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+					exit(0);
+				}
+				tries += 1;
+				scalar.add_assign(one);
+			});
+		}
 	}
 	thread::park();
 }

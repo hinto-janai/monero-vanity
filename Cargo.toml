@@ -12,8 +12,9 @@ lto = true
 codegen-units = 1
 
 [dependencies]
-rand = "0.8.5"
+rand = "0.7.3"
 regex = "1.6.0"
 monero = "0.18.0"
 num_cpus = "1.13.1"
+base58-monero = "1.0.0"
 curve25519-dalek = "3.2.1"
