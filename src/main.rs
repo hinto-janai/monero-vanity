@@ -20,27 +20,41 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-use std::io;
+use std::{io,env,thread};
 use std::io::Write;
-use std::thread;
 use std::process::exit;
-use std::time::Instant;
+//use std::sync::{Arc, Mutex};
+use std::time::{Instant,Duration};
 use num_cpus;
 use regex::Regex;
 use rand::Rng;
 use rand::rngs::OsRng;
-use monero::{PrivateKey,PublicKey,Address,Network,ViewPair};
-use monero::cryptonote::hash::Hash;
+use num_format::{Locale, ToFormattedString};
+use monero::{PrivateKey,PublicKey,Address,Network,ViewPair,Hash};
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::constants::ED25519_BASEPOINT_TABLE;
+
 fn main() {
+	// Command arguments
+	let args: Vec<String> = env::args().collect();
+	if args.len() > 1 {
+		if args[1] == "--benchmark" {
+			test();
+		}
+	}
+
+	// Title
+	println!("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+	println!("@        monero-vanity        @");
+	println!("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+
 	// Ask user for thread count
 	let detected_threads: u32 = num_cpus::get().try_into().unwrap();
 	let mut input = String::new();
 	let threads: u32;
 	print!("How many threads to use? [0-{}] (0 = all threads): ", detected_threads);
 	io::stdout().flush().unwrap();
-    io::stdin().read_line(&mut input).expect("Failed read line");
+	io::stdin().read_line(&mut input).expect("Failed read line");
 	// Handle input
 	let input: u32 = input.trim().parse().expect("Input was not a number");
 	if input > detected_threads {
@@ -62,7 +76,7 @@ fn main() {
 	io::stdout().flush().unwrap();
 	let mut input = String::new();
 	let safe;
-    io::stdin().read_line(&mut input).expect("Failed read line");
+	io::stdin().read_line(&mut input).expect("Failed read line");
 	// Strip newline off input
 	if input.ends_with('\n') {
 		input.pop();
@@ -77,17 +91,17 @@ fn main() {
 	}
 	println!("Safety mode: [{}]", safe);
 
-	// Get pattern type
+	// Get match mode
 	println!("");
-	println!("What type to look for? [third|first|full]");
+	println!("What mode to use? [third|first|full]");
 	println!("    - Third: matches 3rd-43rd character");
 	println!("    - First: matches 1st-43rd character");
-	println!("    - Full (SLOWER): matches full address, 1st-95th character");
-	print!("Type: ");
+	println!("    - Full (6x SLOWER): matches full address, 1st-95th character");
+	print!("Mode: ");
 	io::stdout().flush().unwrap();
 	let mut input = String::new();
-	let pattern_type;
-    io::stdin().read_line(&mut input).expect("Failed read line");
+	let mode;
+	io::stdin().read_line(&mut input).expect("Failed read line");
 	// Strip newline off input
 	if input.ends_with('\n') {
 		input.pop();
@@ -96,13 +110,13 @@ fn main() {
 		}
 	}
 	if Regex::is_match(&Regex::new("^(F|f)(U|u).*$").unwrap(), &input) {
-		pattern_type = "full";
+		mode = "full";
 	} else if Regex::is_match(&Regex::new("^(F|f).*$").unwrap(), &input) {
-		pattern_type = "first";
+		mode = "first";
 	} else {
-		pattern_type = "third";
+		mode = "third";
 	}
-	println!("Using type: [{}]", pattern_type);
+	println!("Using Mode: [{}]", mode);
 
 	// Get address pattern
 	println!("");
@@ -115,7 +129,7 @@ fn main() {
 	print!("Pattern: ");
 	io::stdout().flush().unwrap();
 	let mut input = String::new();
-    io::stdin().read_line(&mut input).expect("Failed read line");
+	io::stdin().read_line(&mut input).expect("Failed read line");
 	// Strip newline off input
 	if input.ends_with('\n') {
 		input.pop();
@@ -124,7 +138,7 @@ fn main() {
 		}
 	}
 	let pattern;
-	if pattern_type == "third" {
+	if mode == "third" {
 		pattern = format!("^..{}.*$", input);
 	} else {
 		pattern = format!("{}", input);
@@ -142,7 +156,7 @@ fn main() {
 
 	// Print input values
 	println!("");
-	print!("Threads: [{}], Pattern: [{}], Type: [{}], Safety: [{}], working...", threads, Regex::new(&pattern).unwrap(), pattern_type, safe);
+	print!("Threads: [{}], Pattern: [{}], Type: [{}], Safety: [{}], working...", threads, Regex::new(&pattern).unwrap(), mode, safe);
 	io::stdout().flush().unwrap();
 
 	// Set runtime values
@@ -151,9 +165,10 @@ fn main() {
 	let mut tries = 0; // Interations
 	let network = [18].as_ref(); // [18] = Mainnet
 	let now = Instant::now(); // Set timer
+	let locale = &Locale::en; // 1000 -> 1,000 formatter
 
 	// Start [Full]
-	if pattern_type == "full" {
+	if mode == "full" {
 	for i in 1..=threads {
 		let regex = Regex::new(&pattern).unwrap();
 		thread::spawn(move|| {
@@ -168,9 +183,10 @@ fn main() {
 					let pub_spend = PublicKey::from_private_key(&priv_spend);
 					let pub_view = PublicKey::from_private_key(&priv_view);
 					let address = &Address::standard(Network::Mainnet, pub_spend, pub_view);
+					let speed = ((tries as f64 / now.elapsed().as_secs_f64()) * threads as f64) as u64;
 					println!("\n");
 					println!("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-					println!("Found in [{}] tries in [{:?}]!\n", tries * threads, now.elapsed());
+					println!("Tries: [{}], Seconds: [{}], Speed: [{} keys/sec]\n", (tries * threads).to_formatted_string(locale), now.elapsed().as_secs_f32(), speed.to_formatted_string(locale));
 					println!("Private Spend Key | {}", priv_spend);
 					println!("Private View Key  | {}", priv_view);
 					println!("Public Spend Key  | {}", pub_spend);
@@ -185,6 +201,7 @@ fn main() {
 			}
 		});
 	}
+	// Else, start [Third/First]
 	} else {
 	for i in 1..=threads {
 		let regex = Regex::new(&pattern).unwrap();
@@ -197,13 +214,14 @@ fn main() {
 					// If found, recover with: private_spend_key = original_seed + thread_id + (tries * threads)
 					let private = PrivateKey { scalar: seed + Scalar::from(i) + Scalar::from(tries*threads), };
 					let address = &base58_monero::encode(&[network, (base).compress().as_bytes()].concat()).unwrap()[..=43];
+					let speed = ((tries as f64 / now.elapsed().as_secs_f64()) * threads as f64) as u64;
 					println!("\n");
-					println!("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-					println!("Found in [{}] tries in [{:?}]!\n", tries * threads, now.elapsed());
+					println!("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+					println!("Tries: [{}], Seconds: [{}], Speed: [{} keys/sec]\n", (tries * threads).to_formatted_string(locale), now.elapsed().as_secs_f32(), speed.to_formatted_string(locale));
 				    println!("Private Spend Key | {}", private);
 				    println!("Standard Address  | {}...\n", address);
 					println!("Recover with: monero-wallet-cli --generate-from-spend-key");
-					println!("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+					println!("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
 					exit(0);
 				}
 				tries += 1;
@@ -211,6 +229,76 @@ fn main() {
 			}
 		});
 	}
+	}
+	thread::park();
+}
+
+fn test() {
+	// Ask user for thread count
+	let detected_threads: u32 = num_cpus::get().try_into().unwrap();
+	let mut input = String::new();
+	let threads: u32;
+	println!("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+	println!("@ monero-vanity benchmark mode @");
+	println!("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+	print!("How many threads to use? [0-{}] (0 = all threads): ", detected_threads);
+	io::stdout().flush().unwrap();
+	io::stdin().read_line(&mut input).expect("Failed read line");
+	// Handle input
+	let input: u32 = input.trim().parse().expect("Input was not a number");
+	if input > detected_threads {
+		println!("Input [{}] is greater than detected cores [{}]", input, detected_threads);
+		exit(1);
+	} else if input == 0 {
+		threads = detected_threads;
+	} else {
+		threads = input;
+	}
+
+	// Ask user for interation count
+	let mut input = String::new();
+	let iter: u64;
+	print!("How many interations? ");
+	io::stdout().flush().unwrap();
+	io::stdin().read_line(&mut input).expect("Failed read line");
+	// Handle input
+	let input: u64 = input.trim().parse().expect("Input was not a number");
+	if input == 0 {
+		iter = 1_000_000;
+	} else {
+		iter = input;
+	}
+
+	// Set runtime values
+	let seed = Scalar::random(&mut OsRng); // Random [u8; 32]
+	let mut base = &seed * &ED25519_BASEPOINT_TABLE; // Base for all threads
+	let offset = &Scalar::from(threads) * &ED25519_BASEPOINT_TABLE; // Offset depending on threads
+	let mut tries = 0; // Interations
+	let network = [18].as_ref(); // [18] = Mainnet
+	let now = Instant::now(); // Set timer
+	let locale = &Locale::en; // 1000 formatter
+
+	println!("Testing [{}] iterations on [{}] threads...\n", iter.to_formatted_string(locale), threads.to_formatted_string(locale));
+	// Test
+	for i in 1..=threads {
+		thread::spawn(move|| {
+			let regex = &Regex::new("^..l.*$").unwrap(); // impossible pattern
+			base = base + (&Scalar::from(i) * &ED25519_BASEPOINT_TABLE);
+			while tries != iter {
+				if Regex::is_match(&regex, &base58_monero::encode(&[network, (base).compress().as_bytes()].concat()).unwrap()[..=43]) {
+					println!("wtf");
+					exit(1);
+				}
+				tries += 1;
+				base += offset;
+			}
+			let speed = iter as f64 / now.elapsed().as_secs_f64();
+			let full_speed = (speed * threads as f64) as u64;
+			println!("Thread: [{}], Time: [{:?}], Speed: [{} keys/sec]", i, now.elapsed().as_secs_f32(), (speed as u64).to_formatted_string(locale));
+			thread::sleep(Duration::from_millis(1000));
+			println!("\nFull speed: [{} keys/sec]", full_speed.to_formatted_string(locale));
+			exit(0);
+		});
 	}
 	thread::park();
 }
