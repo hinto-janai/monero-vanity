@@ -23,13 +23,13 @@
 use std::{io,env,thread};
 use std::io::Write;
 use std::process::exit;
-//use std::sync::{Arc, Mutex};
-use std::time::{Instant,Duration};
+use std::sync::{Arc,Mutex};
+use std::time::Instant;
 use num_cpus;
 use regex::Regex;
 use rand::Rng;
 use rand::rngs::OsRng;
-use num_format::{Locale, ToFormattedString};
+use num_format::{Locale,ToFormattedString};
 use monero::{PrivateKey,PublicKey,Address,Network,ViewPair,Hash};
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::constants::ED25519_BASEPOINT_TABLE;
@@ -258,7 +258,7 @@ fn test() {
 	// Ask user for interation count
 	let mut input = String::new();
 	let iter: u64;
-	print!("How many interations? ");
+	print!("How many iterations? (0 = 1,000,000) ");
 	io::stdout().flush().unwrap();
 	io::stdin().read_line(&mut input).expect("Failed read line");
 	// Handle input
@@ -278,9 +278,17 @@ fn test() {
 	let now = Instant::now(); // Set timer
 	let locale = &Locale::en; // 1000 formatter
 
+	// Atomic counters
+	let total_z: u64 = 0;
+	let done_z: u32 = 0;
+	let total = Arc::new(Mutex::new(total_z));
+	let done = Arc::new(Mutex::new(done_z));
+
 	println!("Testing [{}] iterations on [{}] threads...\n", iter.to_formatted_string(locale), threads.to_formatted_string(locale));
 	// Test
 	for i in 1..=threads {
+		let total_clone = Arc::clone(&total);
+		let done_clone = Arc::clone(&done);
 		thread::spawn(move|| {
 			let regex = &Regex::new("^..l.*$").unwrap(); // impossible pattern
 			base = base + (&Scalar::from(i) * &ED25519_BASEPOINT_TABLE);
@@ -293,11 +301,14 @@ fn test() {
 				base += offset;
 			}
 			let speed = iter as f64 / now.elapsed().as_secs_f64();
-			let full_speed = (speed * threads as f64) as u64;
 			println!("Thread: [{}], Time: [{:?}], Speed: [{} keys/sec]", i, now.elapsed().as_secs_f32(), (speed as u64).to_formatted_string(locale));
-			thread::sleep(Duration::from_millis(1000));
-			println!("\nFull speed: [{} keys/sec]", full_speed.to_formatted_string(locale));
-			exit(0);
+			*total_clone.lock().unwrap() += speed as u64;
+			*done_clone.lock().unwrap() += 1;
+			if *done_clone.lock().unwrap() == threads {
+				let full = *total_clone.lock().unwrap();
+				println!("\nFull speed: [{} keys/sec]", full.to_formatted_string(locale));
+				exit(0);
+			}
 		});
 	}
 	thread::park();
