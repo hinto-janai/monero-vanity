@@ -23,7 +23,6 @@ lto = true
 [dependencies]
 # GUI
 egui   = { version = "0.21.0" }
-eframe = { version = "0.21.3", features = ["wgpu"] }
 
 # CLI
 clap = { version = "4.2.1", features = ["derive"] }
@@ -41,3 +40,23 @@ image = "0.24.6"
 regex = "1.7.3"
 lazy_static = "1.4.0"
 readable = { version = "0.3.3", features = ["ignore_nan_inf"] }
+
+# Windows egui.
+[target.'cfg(windows)'.dependencies]
+eframe = { version = "0.21.3", default-features = false, features = ["wgpu"] }
+
+# Unix egui.
+[target.'cfg(unix)'.dependencies]
+eframe = { version = "0.21.3", default-features = false, features = ["glow"] }
+
+# For Windows build (icon)
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1.12"
+static_vcruntime = "2.0"
+
+# For macOS build (cargo-bundle)
+[package.metadata.bundle]
+name = "monero-vanity"
+identifier = "com.github.hinto-janai.monero-vanity"
+icon = ["src/icon.png"]
+category = "public.app-category.utilities"

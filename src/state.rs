@@ -2,7 +2,6 @@
 use regex::Regex;
 use std::sync::{
 	Arc,
-	Mutex,
 };
 use std::sync::atomic::{
 	AtomicU64,

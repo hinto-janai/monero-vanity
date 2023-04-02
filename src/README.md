@@ -5,7 +5,6 @@
 | cli.rs       | CLI handling
 | constants.rs | General constants
 | gui.rs       | GUI handling
-| icon.png     | GUI Icon
 | main.rs      | Barebones `main()` that starts `CLI/GUI`
 | pattern.rs   | Enum for `Third/First` settings
 | regexes.rs   | Regex validation

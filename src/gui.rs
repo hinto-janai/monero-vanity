@@ -4,7 +4,7 @@ use egui::{
 	CentralPanel,
 	Label,RichText,Button,
 	FontFamily,FontId,TextStyle,Slider,
-	Style,Vec2,TextEdit,SelectableLabel,
+	Style,TextEdit,SelectableLabel,
 	Frame,ScrollArea,
 };
 use crate::constants::{
@@ -13,6 +13,7 @@ use crate::constants::{
 	APP_RESOLUTION,
 	DARK_GRAY,
 	THIRD,FIRST,
+	STATS,HISTORY,
 };
 use crate::threads::{
 	THREADS_MAX,
@@ -113,7 +114,6 @@ impl Gui {
 			initial_window_size: Some(egui::Vec2::from(APP_RESOLUTION)),
 			follow_system_theme: false,
 			default_theme: eframe::Theme::Dark,
-			renderer: eframe::Renderer::Wgpu,
 			icon_data,
 			..Default::default()
 		};
@@ -272,7 +272,7 @@ impl eframe::App for Gui {
 				.underline()
 				.color(BONE)
 			);
-			ui.add_sized([width, text], label);
+			ui.add_sized([width, text], label).on_hover_text(STATS);
 
 			ui.add_space(5.0);
 
@@ -295,7 +295,7 @@ impl eframe::App for Gui {
 				.underline()
 				.color(BONE)
 			);
-			ui.add_sized([width, text], label);
+			ui.add_sized([width, text], label).on_hover_text(HISTORY);
 
 			ui.add_space(5.0);
 			Frame::none().fill(DARK_GRAY).show(ui, |ui| {

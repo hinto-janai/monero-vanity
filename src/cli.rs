@@ -10,7 +10,6 @@ use crate::threads::{
 	THREADS_MAX,
 };
 use crate::state::State;
-use crate::pattern::PatternType;
 use regex::Regex;
 use std::io::Write;
 use readable::Int;
@@ -30,7 +29,7 @@ Warning: this puts you in full control of the regex,
 you can input any value, even an impossible one."#;
 
 #[derive(Parser, Debug)]
-#[command(override_usage = "monero-vanity [--OPTIONS]", long_about = ABOUT)]
+#[command(version, override_usage = "monero-vanity [--OPTIONS]", long_about = ABOUT)]
 pub struct Cli {
 	/// How many threads to use.
 	///
@@ -51,10 +50,6 @@ pub struct Cli {
 	/// How many milliseconds in-between output refreshes
 	#[arg(long, short, default_value_t = 500)]
 	refresh: u64,
-
-	/// Print version
-	#[arg(long, short)]
-	version: bool,
 }
 
 impl Cli {
@@ -102,7 +97,7 @@ impl Cli {
 		};
 
 		// Test for `thread` validity.
-		let mut threads = {
+		let threads = {
 			// Use half if `0`.
 			if cli.threads == 0 {
 				eprintln!("[0] threads selected, defaulting to 50% of available threads: [{}]", *THREADS_HALF);

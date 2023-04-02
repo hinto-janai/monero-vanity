@@ -33,7 +33,7 @@ pub fn validate(s: &str) -> Option<&'static str> {
 	}
 	match Regex::new(&s) {
 		Ok(_)  => None,
-		Err(e) => Some("Regex failed to build")
+		Err(_) => Some("Regex failed to build"),
 	}
 }
 

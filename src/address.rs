@@ -1,10 +1,8 @@
 //---------------------------------------------------------------------------------------------------- Use
 use regex::Regex;
 use rand::Rng;
-use rand::rngs::OsRng;
 use monero::{
 	Network,
-	PublicKey,
 	PrivateKey,
 	KeyPair,
 	Address,
@@ -31,7 +29,7 @@ pub fn spawn_workers(
 	die: &Arc<AtomicBool>,
 	regex: &Regex,
 ) {
-	for i in 0..threads {
+	for _ in 0..threads {
 		let to_main = to_main.clone();
 		let iter    = iter.clone();
 		let die     = die.clone();
