@@ -10,13 +10,13 @@ pub const VERSION: &str = concat!("v", env!("CARGO_PKG_VERSION"));
 pub const NAME_VER: &str = concat!("monero-vanity v", env!("CARGO_PKG_VERSION"));
 
 /// Current `git` commit.
-pub const COMMIT: &str = include_str!("../.git/refs/heads/main");
+pub const COMMIT: &str = include_str!("commit");
 
 pub const VERSION_COMMIT: &str = concat!(
 	"v",
 	env!("CARGO_PKG_VERSION"),
 	" | Commit: ",
-	include_str!("../.git/refs/heads/main"),
+	include_str!("commit"),
 );
 
 /// 1 second.
@@ -53,7 +53,7 @@ pub const DARK_GRAY: egui::Color32 = egui::Color32::from_rgb(18, 18, 18);
 pub const APP_RESOLUTION: [f32; 2] = [1000.0, 800.0];
 
 /// App icon.
-pub const ICON: &[u8] = include_bytes!("../images/icon.png");
+pub const ICON: &[u8] = include_bytes!("icon.png");
 
 //---------------------------------------------------------------------------------------------------- TESTS
 //#[cfg(test)]

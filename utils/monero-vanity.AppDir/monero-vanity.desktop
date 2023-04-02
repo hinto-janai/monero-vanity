@@ -3,5 +3,6 @@ Name=monero-vanity
 GenericName=Address Generator
 Comment=Monero Vanity Address Generator GUI/CLI
 Exec=monero-vanity
-Icon=256
+Icon=icon
 Type=Application
+Categories=Utility
