@@ -1868,7 +1868,6 @@ dependencies = [
  "image",
  "lazy_static",
  "monero",
- "num-format",
  "rand 0.7.3",
  "readable",
  "regex",

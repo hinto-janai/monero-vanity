@@ -1,14 +1,20 @@
 # monero-vanity
-monero-vanity is a GUI/CLI tool that generates vanity addresses (and spend keys) for Monero, like this one:
+monero-vanity is a GUI/CLI tool that generates vanity addresses for Monero, like this one:
 ```
 44hintoFpuo3ugKfcqJvh5BmrsTRpnTasJmetKC4VXCt6QDtbHVuixdTtsm6Ptp7Y8haXnJ6j8Gj2dra8CKy5ewz7Vi9CYW
 ```
+
+---
+
 * [Comparison](#Comparison)
 * [Estimate](#Estimate)
 * [GUI Usage](#GUI-Usage)
 * [CLI Usage](#CLI-Usage)
+* [Install](#Install)
 * [Implementation](#Implementation)
 * [Build](#Build)
+
+---
 
 ## Comparison
 | Generator                                                           | Hardware needed        | Regex | Calculates seed | Normal speed    | Regex speed |
@@ -83,6 +89,21 @@ Actual regex used: `^4.hinto.*$`
 To disable this, use `--first`.
 
 Warning: this puts you in full control of the regex, you can input any value, even an impossible one.
+
+## Install
+Download [here.](https://github.com/hinto-janai/monero-vanity/releases)
+
+### Cargo
+If you have `cargo`, you can install with:
+```bash
+cargo install monero-vanity
+```
+
+### Arch
+If you're using Arch Linux, you can install with:
+```bash
+paru monero-vanity
+```
 
 ## Implementation
 1. [Random `[u8; 64]` is generated (512 bits/64 bytes)]
