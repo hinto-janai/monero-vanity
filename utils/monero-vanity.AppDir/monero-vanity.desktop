@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=monero-vanity
+GenericName=Address Generator
+Comment=Monero Vanity Address Generator GUI/CLI
+Exec=monero-vanity
+Icon=256
+Type=Application

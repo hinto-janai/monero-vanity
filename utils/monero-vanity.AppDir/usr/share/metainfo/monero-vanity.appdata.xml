@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.hinto_janai.monero-vanity</id>
+  
+  <name>monero-vanity</name>
+  <summary>XMR Address Generator</summary>
+  
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  
+  <recommends>
+    <display_length compare="ge">1280</display_length>
+  </recommends>
+  
+  <description>
+    <p>
+      Monero/XMR Vanity Address Generator GUI/CLI
+    </p>
+  </description>
+  
+  <launchable type="desktop-id">monero-vanity.desktop</launchable>
+</component>

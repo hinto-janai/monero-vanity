@@ -169,8 +169,7 @@ impl Cli {
 				println!("Private View Key  | {}", m.2);
 				println!("Tries             | {}", Int::from(iter));
 				println!("Speed             | {} keys per second\n", Int::from(crate::speed::calculate(&state.start, iter)));
-				println!("Recover with:");
-				println!("./monero-wallet-cli --generate-from-spend-key {}", m.1);
+				println!("Recover with: ./monero-wallet-cli --generate-from-spend-key YOUR_WALLET_NAME");
 				println!("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
 				std::process::exit(0);
 			}

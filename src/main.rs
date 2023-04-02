@@ -1,3 +1,5 @@
+//! See the [GitHub](https://github.com/hinto-janai/monero-vanity) repo for info.
+
 mod address;
 mod cli;
 mod constants;

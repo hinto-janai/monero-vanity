@@ -1,0 +1,3 @@
+[submodule "utils/aur/monero-vanity-bin"]
+	path = utils/aur/monero-vanity-bin
+	url = ssh://aur@aur.archlinux.org/monero-vanity-bin.git

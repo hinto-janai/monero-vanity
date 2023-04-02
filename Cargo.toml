@@ -2,6 +2,14 @@
 name = "monero-vanity"
 version = "0.4.0"
 edition = "2021"
+authors = ["hinto.janai <hinto.janai@protonmail.com>"]
+description = "Monero Vanity Address Generator"
+documentation = "https://docs.rs/monero-vanity"
+repository = "https://github.com/hinto-janai/monero-vanity"
+readme = "README.md"
+keywords = ["monero", "vanity", "address", "cli", "gui"]
+categories = ["command-line-utilities"]
+license = "MIT"
 
 # Build with [RUSTFLAGS="-C target-cpu=native" cargo build --profile optimized]
 # if you don't care about compatibility and want to optimize for your particular CPU

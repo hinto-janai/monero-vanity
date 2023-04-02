@@ -1,8 +1,24 @@
+<div align="center">
+
 # monero-vanity
 monero-vanity is a GUI/CLI tool that generates vanity addresses for Monero, like this one:
+</div>
+
 ```
 44hintoFpuo3ugKfcqJvh5BmrsTRpnTasJmetKC4VXCt6QDtbHVuixdTtsm6Ptp7Y8haXnJ6j8Gj2dra8CKy5ewz7Vi9CYW
 ```
+
+<div align="center">
+
+#### GUI
+
+https://user-images.githubusercontent.com/101352116/229327381-2b001b8a-b1a0-4889-93d2-ce6a9c2a858f.mp4
+
+#### CLI
+
+https://user-images.githubusercontent.com/101352116/229327380-52a7f8a2-fcf7-4eb0-9ec8-c0554f86a2bc.mp4
+
+</div>
 
 ---
 
@@ -20,7 +36,7 @@ monero-vanity is a GUI/CLI tool that generates vanity addresses for Monero, like
 | Generator                                                           | Hardware needed        | Regex | Calculates seed | Normal speed    | Regex speed |
 |---------------------------------------------------------------------|------------------------|-------|-----------------|-----------------|-------------|
 | [vanity-monero](https://github.com/monero-ecosystem/vanity-monero)  | CPU (x86, 32/64-bit)   | Yes   | Yes             | 400k/sec        | 170k/sec
-| **[monero-vanity](https://github.com/hinto-janaiyo/monero-vanity)** | CPU (x86, 64-bit)      | Yes   | No              | 5.8million/sec  | 5.8million/sec
+| **[monero-vanity](https://github.com/hinto-janai/monero-vanity)** | CPU (x86, 64-bit)      | Yes   | No              | 5.8million/sec  | 5.8million/sec
 | [vanity-xmr-cuda](https://github.com/SChernykh/vanity_xmr_cuda)     | NVIDIA GPU (with CUDA) | No    | No              | 8.1million/sec  |
 
 *Tested with: Ryzen 5950x, GTX 1660 Ti*
@@ -42,6 +58,23 @@ monero-vanity is a GUI/CLI tool that generates vanity addresses for Monero, like
 | 12         | `44hintojanaiyo` | Pretty much never    |
 
 *Assuming speed of 5.8million keys a second*
+
+## GUI Usage
+<div align="center">
+
+After finding an address, create a new Monero wallet:
+
+<img src="images/1.png" width="50%"/>
+
+Input the address, private view key, and private spend key:
+
+<img src="images/2.png" width="50%"/>
+
+And verify your new wallet address is correct:
+
+<img src="images/3.png" width="50%"/>
+
+</div>
 
 ## CLI Usage
 ```bash
@@ -106,15 +139,15 @@ paru monero-vanity
 ```
 
 ## Implementation
-1. [Random `[u8; 64]` is generated (512 bits/64 bytes)]
-2. [Scalar is created from above bytes]
-3. [EdwardsPoint's base58 encoding is checked (4...) with regex]
-4. [If match, create full address and return to user, else...]
-5. [Increment EdwardsPoint by 1 and continue]
+1. [Random `[u8; 64]` is generated (512 bits/64 bytes)](https://github.com/hinto-janai/monero-vanity/blob/880ba3fcd4183ead51f07bb47dad854d5a8b70be/src/address.rs#L46)
+2. [Scalar is created from above bytes](https://github.com/hinto-janai/monero-vanity/blob/880ba3fcd4183ead51f07bb47dad854d5a8b70be/src/address.rs#L67)
+3. [EdwardsPoint's base58 encoding is checked (4...) with regex](https://github.com/hinto-janai/monero-vanity/blob/880ba3fcd4183ead51f07bb47dad854d5a8b70be/src/address.rs#L79)
+4. [If match, create full address and return to user, else...](https://github.com/hinto-janai/monero-vanity/blob/880ba3fcd4183ead51f07bb47dad854d5a8b70be/src/address.rs#L83)
+5. [Increment EdwardsPoint by 1 and continue](https://github.com/hinto-janai/monero-vanity/blob/880ba3fcd4183ead51f07bb47dad854d5a8b70be/src/address.rs#L101)
 
 **Notes:**
-- [Each thread seeds its own RNG]
-- The (optional) private _view_ key is also created with [512 random bits]
+- [Each thread seeds its own RNG](https://github.com/hinto-janai/monero-vanity/blob/880ba3fcd4183ead51f07bb47dad854d5a8b70be/src/address.rs#L64)
+- The (optional) private _view_ key is also created with [512 random bits](https://github.com/hinto-janai/monero-vanity/blob/880ba3fcd4183ead51f07bb47dad854d5a8b70be/src/address.rs#L89)
 
 ## Build
 ```
