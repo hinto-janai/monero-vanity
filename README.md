@@ -133,21 +133,21 @@ cargo install monero-vanity
 ```
 
 ### Arch
-If you're using Arch Linux, you can install with:
+If you're using Arch Linux, you can install from the [AUR](https://aur.archlinux.org/packages/monero-vanity-bin) with:
 ```bash
 paru monero-vanity
 ```
 
 ## Implementation
 1. [Random `[u8; 64]` is generated (512 bits/64 bytes)](https://github.com/hinto-janai/monero-vanity/blob/28e902a830049a7478d15be94fd3c55488c1aac6/src/address.rs#L46)
-2. [Scalar is created from above bytes](https://github.com/hinto-janai/monero-vanity/blob/28e902a830049a7478d15be94fd3c55488c1aac6/src/address.rs#L67)
-3. [EdwardsPoint's base58 encoding is checked (4...) with regex](https://github.com/hinto-janai/monero-vanity/blob/28e902a830049a7478d15be94fd3c55488c1aac6/src/address.rs#L79)
+2. [Scalar is created by reducing the above bytes](https://github.com/hinto-janai/monero-vanity/blob/28e902a830049a7478d15be94fd3c55488c1aac6/src/address.rs#L67)
+3. [Compressed EdwardsPoint's base58 encoding is checked (4...) with regex](https://github.com/hinto-janai/monero-vanity/blob/28e902a830049a7478d15be94fd3c55488c1aac6/src/address.rs#L79)
 4. [If match, create full address and return to user, else...](https://github.com/hinto-janai/monero-vanity/blob/28e902a830049a7478d15be94fd3c55488c1aac6/src/address.rs#L83)
 5. [Increment EdwardsPoint by 1 and continue](https://github.com/hinto-janai/monero-vanity/blob/28e902a830049a7478d15be94fd3c55488c1aac6/src/address.rs#L101)
 
 **Notes:**
 - [Each thread seeds its own RNG](https://github.com/hinto-janai/monero-vanity/blob/28e902a830049a7478d15be94fd3c55488c1aac6/src/address.rs#L64)
-- The (optional) private _view_ key is also created with [512 random bits](https://github.com/hinto-janai/monero-vanity/blob/28e902a830049a7478d15be94fd3c55488c1aac6/src/address.rs#L89)
+- The (optional) private _view_ key is also created by reducing [512 random bits](https://github.com/hinto-janai/monero-vanity/blob/28e902a830049a7478d15be94fd3c55488c1aac6/src/address.rs#L89)
 
 ## Build
 ```
