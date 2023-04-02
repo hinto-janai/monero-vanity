@@ -1,21 +1,36 @@
 [package]
 name = "monero-vanity"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 
 # Build with [RUSTFLAGS="-C target-cpu=native" cargo build --profile optimized]
 # if you don't care about compatibility and want to optimize for your particular CPU
 # for a 15%~ speed increase. Or just [cargo build --profile] for regular optimizations.
-[profile.optimized]
-inherits = "release"
-lto = true
+[profile.release]
+debug = false
+strip = "symbols"
 codegen-units = 1
+lto = true
 
 [dependencies]
+# GUI
+egui   = { version = "0.21.0" }
+eframe = { version = "0.21.3", features = ["wgpu"] }
+
+# CLI
+clap = { version = "4.2.1", features = ["derive"] }
+
+# RNG/Crypto
 rand = "0.7.3"
-regex = "1.6.0"
-monero = "0.18.0"
-num_cpus = "1.13.1"
-num-format = "0.4.0"
-base58-monero = "1.0.0"
 curve25519-dalek = "3.2.1"
+
+# Monero
+monero = "0.18.2"
+base58-monero = "1.0.0"
+
+# Misc
+image = "0.24.6"
+regex = "1.7.3"
+num-format = "0.4.4"
+lazy_static = "1.4.0"
+readable = { version = "0.3.3", features = ["ignore_nan_inf"] }
