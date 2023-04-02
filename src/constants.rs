@@ -12,6 +12,13 @@ pub const NAME_VER: &str = concat!("monero-vanity v", env!("CARGO_PKG_VERSION"))
 /// Current `git` commit.
 pub const COMMIT: &str = include_str!("../.git/refs/heads/main");
 
+pub const VERSION_COMMIT: &str = concat!(
+	"v",
+	env!("CARGO_PKG_VERSION"),
+	" | Commit: ",
+	include_str!("../.git/refs/heads/main"),
+);
+
 /// 1 second.
 pub const SECOND: std::time::Duration = std::time::Duration::from_secs(1);
 

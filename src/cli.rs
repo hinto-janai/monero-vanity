@@ -4,6 +4,7 @@ use std::process::exit;
 use crate::constants::{
 	VERSION,
 	COMMIT,
+	VERSION_COMMIT,
 };
 use crate::threads::{
 	THREADS_HALF,
@@ -29,7 +30,7 @@ Warning: this puts you in full control of the regex,
 you can input any value, even an impossible one."#;
 
 #[derive(Parser, Debug)]
-#[command(version, override_usage = "monero-vanity [--OPTIONS]", long_about = ABOUT)]
+#[command(version = VERSION_COMMIT, override_usage = "monero-vanity [--OPTIONS]", long_about = ABOUT)]
 pub struct Cli {
 	/// How many threads to use.
 	///
@@ -57,12 +58,6 @@ impl Cli {
 	#[inline(always)]
 	pub fn handle_args() {
 		let cli = Self::parse();
-
-		// Version.
-		if cli.version {
-			println!("monero-vanity v{} | Commit: {}", VERSION, COMMIT);
-			exit(0);
-		}
 
 		// Test for `pattern` validity.
 		if cli.pattern.is_empty() {
