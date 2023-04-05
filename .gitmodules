@@ -1,0 +1,6 @@
+[submodule "monero-rs"]
+	path = external/monero-rs
+	url = git@github.com:hinto-janai/monero-rs.git
+[submodule "curve25519-dalek"]
+	path = external/curve25519-dalek
+	url = git@github.com:hinto-janai/curve25519-dalek.git
