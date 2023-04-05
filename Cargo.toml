@@ -1,6 +1,6 @@
 [package]
 name = "monero-vanity"
-version = "0.4.1"
+version = "0.5.0"
 edition = "2021"
 authors = ["hinto.janai <hinto.janai@protonmail.com>"]
 description = "Monero Vanity Address Generator"
@@ -32,7 +32,7 @@ egui   = { version = "0.21.0" }
 clap = { version = "4.2.1", features = ["derive"] }
 
 # RNG/Crypto
-rand = "0.7.3"
+rand = "0.8.5"
 curve25519-dalek = { path = "external/curve25519-dalek" }
 #curve25519-dalek = "3.2.1"
 

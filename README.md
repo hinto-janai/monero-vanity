@@ -29,35 +29,54 @@ https://user-images.githubusercontent.com/101352116/229327380-52a7f8a2-fcf7-4eb0
 * [Install](#Install)
 * [Implementation](#Implementation)
 * [Build](#Build)
+* [Warning](#Warning)
 
 ---
 
 ## Comparison
-| Generator                                                           | Hardware needed        | Regex | Calculates seed | Normal speed    | Regex speed |
-|---------------------------------------------------------------------|------------------------|-------|-----------------|-----------------|-------------|
-| [vanity-monero](https://github.com/monero-ecosystem/vanity-monero)  | CPU (x86, 32/64-bit)   | Yes   | Yes             | 400k/sec        | 170k/sec
-| **[monero-vanity](https://github.com/hinto-janai/monero-vanity)** | CPU (x86, 64-bit)      | Yes   | No              | 5.8million/sec  | 5.8million/sec
-| [vanity-xmr-cuda](https://github.com/SChernykh/vanity_xmr_cuda)     | NVIDIA GPU (with CUDA) | No    | No              | 8.1million/sec  |
-
 *Tested with: Ryzen 5950x, GTX 1660 Ti*
 
-## Estimate
-| Characters | Example          | Rough Time Estimate  |
-|------------|------------------|----------------------|
-| 1          | `44h`            | Instant              |
-| 2          | `44hi`           | Instant              |
-| 3          | `44hin`          | Instant              |
-| 4          | `44hint`         | 2 seconds            |
-| 5          | `44hinto`        | 1 minute, 30 seconds |
-| 6          | `44hintoj`       | 1 hour, 30 minutes   |
-| 7          | `44hintoja`      | 4 days, 10 hours     |
-| 8          | `44hintojan`     | 280 days             |
-| 9          | `44hintojana`    | 49 years             |
-| 10         | `44hintojanai`   | 3,151 years          |
-| 11         | `44hintojanaiy`  | 100,852 years        |
-| 12         | `44hintojanaiyo` | Pretty much never    |
+| Generator                                                           | Hardware needed        | Regex | Calculates seed | Normal speed     | Regex speed |
+|---------------------------------------------------------------------|------------------------|-------|-----------------|------------------|-------------|
+| [vanity-monero](https://github.com/monero-ecosystem/vanity-monero)  | CPU (x86, 32/64-bit)   | Yes   | Yes             | 400k/sec         | 170k/sec
+| **[monero-vanity](https://github.com/hinto-janai/monero-vanity)**   | CPU (x86, 64-bit)      | Yes   | No              | 72 million/sec   | 72 million/sec
+| [vanity-xmr-cuda](https://github.com/SChernykh/vanity_xmr_cuda)     | NVIDIA GPU (with CUDA) | No    | No              | 8.1 million/sec  |
 
-*Assuming speed of 5.8million keys a second*
+The speed comes from:
+- Batched `EdwardsPoint` operations
+- Only encoding the first `11` bytes of the Monero address.
+
+This means that you _cannot_ search for anything past `11` characters, e.g:
+```
+44hintoFpuo3ug...
+          ^
+----------|
+The last character that will be looked at
+
+'3ug' onward is ignored.
+```
+
+This is fine since you (probably) want the identifier to be near the front.
+
+Anything past 8 characters is also unrealistic, see below:
+
+## Estimate
+| Characters | Example          | Rough Time Estimate   |
+|------------|------------------|-----------------------|
+| 1          | `44h`            | Instant               |
+| 2          | `44hi`           | Instant               |
+| 3          | `44hin`          | Instant               |
+| 4          | `44hint`         | Instant               |
+| 5          | `44hinto`        | 8 seconds             |
+| 6          | `44hintoj`       | 7 minutes, 30 seconds |
+| 7          | `44hintoja`      | 2 hours, 45 minutes   |
+| 8          | `44hintojan`     | 23 days               |
+| 9          | `44hintojana`    | 5 years, 4 months     |
+| 10         | `44hintojanai`   | 253 years             |
+| 11         | `44hintojanaiy`  | 8,124 years           |
+| 12         | `44hintojanaiyo` | Pretty much never     |
+
+*Assuming speed of 72 million keys a second*
 
 ## GUI Usage
 <div align="center">
@@ -126,12 +145,12 @@ Warning: this puts you in full control of the regex, you can input any value, ev
 ## Install
 Download [here.](https://github.com/hinto-janai/monero-vanity/releases)
 
-### Cargo
-If you have `cargo`, you can install with:
-```bash
-cargo install monero-vanity
-```
-
+<!--### Cargo-->
+<!--If you have `cargo`, you can install with:-->
+<!--```bash-->
+<!--cargo install monero-vanity-->
+<!--```-->
+<!---->
 ### Arch
 If you're using Arch Linux, you can install from the [AUR](https://aur.archlinux.org/packages/monero-vanity-bin) with:
 ```bash
@@ -139,18 +158,22 @@ paru monero-vanity
 ```
 
 ## Implementation
-1. [Random `[u8; 64]` is generated (512 bits/64 bytes)](https://github.com/hinto-janai/monero-vanity/blob/28e902a830049a7478d15be94fd3c55488c1aac6/src/address.rs#L46)
-2. [Scalar is created by reducing the above bytes](https://github.com/hinto-janai/monero-vanity/blob/28e902a830049a7478d15be94fd3c55488c1aac6/src/address.rs#L67)
-3. [Compressed EdwardsPoint's base58 encoding is checked (4...) with regex](https://github.com/hinto-janai/monero-vanity/blob/28e902a830049a7478d15be94fd3c55488c1aac6/src/address.rs#L79)
-4. [If match, create full address and return to user, else...](https://github.com/hinto-janai/monero-vanity/blob/28e902a830049a7478d15be94fd3c55488c1aac6/src/address.rs#L83)
-5. [Increment EdwardsPoint by 1 and continue](https://github.com/hinto-janai/monero-vanity/blob/28e902a830049a7478d15be94fd3c55488c1aac6/src/address.rs#L101)
+1. [Random `[u8; 64]` is generated (512 bits/64 bytes)](https://github.com/hinto-janai/monero-vanity/blob/43d0dbedb23bbe157ea76704e848d4708531ff5e/src/address.rs#L69)
+2. [Scalar is created by reducing the above bytes](https://github.com/hinto-janai/monero-vanity/blob/43d0dbedb23bbe157ea76704e848d4708531ff5e/src/address.rs#L53)
+3. [10,000 `EdwardsPoint`'s are created with += 1 offsetting](https://github.com/hinto-janai/monero-vanity/blob/43d0dbedb23bbe157ea76704e848d4708531ff5e/src/address.rs#L81)
+4. [EdwardsPoint are batch compressed into Y points](https://github.com/hinto-janai/monero-vanity/blob/43d0dbedb23bbe157ea76704e848d4708531ff5e/src/address.rs#L87)
+5. [Mainnet byte and first 10 CompressedEdwardsY bytes are concatted](https://github.com/hinto-janai/monero-vanity/blob/43d0dbedb23bbe157ea76704e848d4708531ff5e/src/address.rs#L91)
+6. [Those 11 bytes are encoded in base58](https://github.com/hinto-janai/monero-vanity/blob/43d0dbedb23bbe157ea76704e848d4708531ff5e/src/address.rs#L107)
+7. [If regex matches, create full address and return to user, else...](https://github.com/hinto-janai/monero-vanity/blob/43d0dbedb23bbe157ea76704e848d4708531ff5e/src/address.rs#L109)
+8. [Continue, either with next point or next batch](https://github.com/hinto-janai/monero-vanity/blob/43d0dbedb23bbe157ea76704e848d4708531ff5e/src/address.rs#L130)
 
 **Notes:**
-- [Each thread seeds its own RNG](https://github.com/hinto-janai/monero-vanity/blob/28e902a830049a7478d15be94fd3c55488c1aac6/src/address.rs#L64)
-- The (optional) private _view_ key is also created by reducing [512 random bits](https://github.com/hinto-janai/monero-vanity/blob/28e902a830049a7478d15be94fd3c55488c1aac6/src/address.rs#L89)
+- [Each thread seeds its own RNG](https://github.com/hinto-janai/monero-vanity/blob/43d0dbedb23bbe157ea76704e848d4708531ff5e/src/address.rs#L68)
+- The (optional) private _view_ key is also created by reducing [512 random bits](https://github.com/hinto-janai/monero-vanity/blob/43d0dbedb23bbe157ea76704e848d4708531ff5e/src/address.rs#L118)
 
 ## Build
 ```
+git clone --recursive https://github.com/hinto-janai/monero-vanity
 cargo build --release
 ```
 Optimized for your specific CPU (up to 15%~ speed increase):
@@ -158,5 +181,7 @@ Optimized for your specific CPU (up to 15%~ speed increase):
 RUSTFLAGS="-C target-cpu=native" cargo build --release
 ```
 
-## Thanks
-Big thanks to [kayabaNerve](https://github.com/kayabaNerve) for helping me with ECC cryptography and Rust (he's the reason why it's fast).
+## Warning
+I am not a cryptographer, nor was this code audited.
+
+Use this program at your own risk.
