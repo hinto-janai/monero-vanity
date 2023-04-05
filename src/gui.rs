@@ -24,7 +24,7 @@ use regex::Regex;
 use std::time::Instant;
 use std::fmt::Write;
 use readable::{
-	Int,
+	Unsigned,
 	Time,
 };
 
@@ -158,7 +158,7 @@ impl eframe::App for Gui {
 			self.state.elapsed = Time::from(self.state.start.elapsed());
 			self.state.speed   = crate::speed::calculate(&self.state.start, self.state.iter.load(std::sync::atomic::Ordering::SeqCst));
 		}
-		let iter = Int::from(self.state.iter.load(std::sync::atomic::Ordering::SeqCst));
+		let iter = Unsigned::from(self.state.iter.load(std::sync::atomic::Ordering::SeqCst));
 
 		// Central Panel.
 		CentralPanel::default().show(ctx, |ui| {
@@ -279,10 +279,10 @@ impl eframe::App for Gui {
 			egui::Frame::none().fill(DARK_GRAY).show(ui, |ui| {
 				let results = format!(
 					"Speed   | {} keys per second\nTries   | {}\nElapsed | {}\nThreads | {}\nPattern | {}",
-					Int::from(self.state.speed),
+					Unsigned::from(self.state.speed),
 					iter,
 					self.state.elapsed,
-					Int::from(self.state.threads),
+					Unsigned::from(self.state.threads),
 					self.state.pattern,
 				);
 				ui.add_sized([width, text], TextEdit::multiline(&mut results.as_str()));
@@ -323,8 +323,8 @@ impl eframe::App for Gui {
 					msg.0,
 					msg.1,
 					msg.2,
-					Int::from(crate::speed::calculate(&self.state.start, iter)),
-					Int::from(iter),
+					Unsigned::from(crate::speed::calculate(&self.state.start, iter)),
+					Unsigned::from(iter),
 				);
 
 				self.state.die.store(true, std::sync::atomic::Ordering::SeqCst);

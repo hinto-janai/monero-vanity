@@ -33,17 +33,19 @@ clap = { version = "4.2.1", features = ["derive"] }
 
 # RNG/Crypto
 rand = "0.7.3"
-curve25519-dalek = "3.2.1"
+curve25519-dalek = { path = "external/curve25519-dalek" }
+#curve25519-dalek = "3.2.1"
 
 # Monero
-monero = "0.18.2"
+monero = { path = "external/monero-rs" }
+#monero = "0.18.2"
 base58-monero = "1.0.0"
 
 # Misc
 image = "0.24.6"
 regex = "1.7.3"
 lazy_static = "1.4.0"
-readable = { version = "0.3.3", features = ["ignore_nan_inf"] }
+readable = { version = "0.6.0", features = ["ignore_nan_inf"] }
 
 # Windows egui.
 [target.'cfg(windows)'.dependencies]

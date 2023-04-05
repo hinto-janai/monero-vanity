@@ -13,7 +13,7 @@ use crate::threads::{
 use crate::state::State;
 use regex::Regex;
 use std::io::Write;
-use readable::Int;
+use readable::Unsigned;
 
 //---------------------------------------------------------------------------------------------------- CLI
 const ABOUT: &str =
@@ -157,8 +157,8 @@ impl Cli {
 				println!("Monero Address    | {}", m.0);
 				println!("Private Spend Key | {}", m.1);
 				println!("Private View Key  | {}", m.2);
-				println!("Tries             | {}", Int::from(iter));
-				println!("Speed             | {} keys per second\n", Int::from(crate::speed::calculate(&state.start, iter)));
+				println!("Tries             | {}", Unsigned::from(iter));
+				println!("Speed             | {} keys per second\n", Unsigned::from(crate::speed::calculate(&state.start, iter)));
 				println!("Recover with: ./monero-wallet-cli --generate-from-spend-key YOUR_WALLET_NAME");
 				println!("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
 				std::process::exit(0);
@@ -166,8 +166,8 @@ impl Cli {
 
 			print!(
 				"\rTries: [{}] | Speed: [{} keys per second]",
-				Int::from(iter),
-				Int::from(crate::speed::calculate(&state.start, iter)),
+				Unsigned::from(iter),
+				Unsigned::from(crate::speed::calculate(&state.start, iter)),
 			);
 			std::io::stdout().lock().flush();
 
