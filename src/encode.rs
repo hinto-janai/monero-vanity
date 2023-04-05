@@ -11,73 +11,93 @@
 
 //---------------------------------------------------------------------------------------------------- Base58.
 // This code is copied from `https://docs.rs/base58-monero`
-// and edited for performance. Since the input in `monero-vanity`
-// is known and always correct, we can get rid of some `Result`'s and `.unwrap()`'s.
+// and optimized for performance. Since the input in `monero-vanity`
+// is fixed-length and always correct, we can get rid of error handling,
+// get rid of dynamic code, and optimize for the exact `11` characters
+// the user wants matched.
 
 //---------------------------------------------------------------------------------------------------- Constants
-/// Base58 alphabet, does not contains visualy similar characters
-pub const BASE58_CHARS: &[u8] = b"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-/// Resulted block size given a `0..=8` bytes block
-pub const ENCODED_BLOCK_SIZES: [usize; 9] = [0, 2, 3, 5, 6, 7, 9, 10, 11];
-/// Maximum size of block to encode
-pub const FULL_BLOCK_SIZE: usize = 8;
-/// Size of an encoded 8 bytes block, i.e. maximum encoded block size
-pub const FULL_ENCODED_BLOCK_SIZE: usize = ENCODED_BLOCK_SIZES[FULL_BLOCK_SIZE];
-/// Size of checksum
-pub const CHECKSUM_SIZE: usize = 4;
+// Base58 alphabet, does not contains visualy similar characters
+const BASE58_CHARS: [u8; 58] = *b"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+const BASE58_CHARS_LEN: u64 = BASE58_CHARS.len() as u64;
 
-//---------------------------------------------------------------------------------------------------- Encode
-fn u8be_to_u64(data: &[u8]) -> u64 {
-	let mut res = 0u64;
-	for b in data {
-		res = res << 8 | *b as u64;
-	}
+// The character chunks we're operating on.
+// This is the max for Monero's `base58` and
+// equate to around `8` bytes.
+const CHUNK: usize = 11;
+
+// Unrolled `u8be_to_u64()` function loop as a macro.
+macro_rules! n {
+    ($d:expr, $i:expr, $num:expr) => {
+        $num = $num << 8 | $d[$i] as u64;
+    }
+}
+
+// Unrolled `encode_block()` function loop as a macro.
+macro_rules! r {
+    ($i:expr, $num:expr, $res:expr) => {
+        $res[$i] = BASE58_CHARS[($num % BASE58_CHARS_LEN) as usize];
+        $num /= BASE58_CHARS_LEN;
+    }
+}
+
+#[inline(always)]
+/// INVARIANT:
+/// Only uses the first `11` bytes of input.
+pub fn encode_11(data: &[u8]) -> [u8; CHUNK] {
+	let mut res = [0; CHUNK];
+	let mut num = {
+		let mut num: u64 = 0;
+		n!(data, 0, num);
+		n!(data, 1, num);
+		n!(data, 2, num);
+		n!(data, 3, num);
+		n!(data, 4, num);
+		n!(data, 5, num);
+		n!(data, 6, num);
+		n!(data, 7, num);
+		num
+	};
+	r!(10, num, res);
+	r!(9, num, res);
+	r!(8, num, res);
+	r!(7, num, res);
+	r!(6, num, res);
+	r!(5, num, res);
+	r!(4, num, res);
+	r!(3, num, res);
+	r!(2, num, res);
+	r!(1, num, res);
+	r!(0, num, res);
 	res
 }
 
-fn encode_block(data: &[u8]) -> Result<[char; FULL_ENCODED_BLOCK_SIZE]> {
-	if data.is_empty() || data.len() > FULL_BLOCK_SIZE {
-		return Err(Error::InvalidBlockSize);
-	}
-	let mut res = ['1'; FULL_ENCODED_BLOCK_SIZE];
-	let mut num = u8be_to_u64(data);
-	let mut i = ENCODED_BLOCK_SIZES[data.len()];
-	while i > 0 {
-		let remainder: usize = (num % BASE58_CHARS.len() as u64) as usize;
-		num /= BASE58_CHARS.len() as u64;
-		i -= 1;
-		res[i] = BASE58_CHARS[remainder] as char;
-	}
-	Ok(res)
-}
-
-/// Encode a byte vector into a base58-encoded string
-pub fn encode(data: &[u8]) -> Result<String> {
-    let last_block_size = ENCODED_BLOCK_SIZES[data.len() % FULL_BLOCK_SIZE];
-    let full_block_count = data.len() / FULL_BLOCK_SIZE;
-    let data: Result<Vec<[char; FULL_ENCODED_BLOCK_SIZE]>> =
-        data.chunks(FULL_BLOCK_SIZE).map(encode_block).collect();
-
-    let mut i = 0;
-    let mut res: Vec<char> = Vec::new();
-    data?.into_iter().for_each(|v| {
-        if i == full_block_count {
-            res.extend_from_slice(&v[..last_block_size]);
-        } else {
-            res.extend_from_slice(&v);
-        }
-        i += 1;
-    });
-
-    let s: String = res.into_iter().collect();
-    Ok(s)
-}
-
-
 //---------------------------------------------------------------------------------------------------- TESTS
-//#[cfg(test)]
-//mod tests {
-//  #[test]
-//  fn __TEST__() {
-//  }
-//}
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	// This test checks _every_ 11-byte array
+	// permutation and checks the base58 encoded
+	// version is `11` in length.
+	//
+	// Forgive the ugliness.
+	fn encode_all_11_byte_arrays() {
+		for a in 0..=255 {
+		for b in 0..=255 {
+		for c in 0..=255 {
+		for d in 0..=255 {
+		for e in 0..=255 {
+		for f in 0..=255 {
+		for g in 0..=255 {
+		for h in 0..=255 {
+		for i in 0..=255 {
+		for j in 0..=255 {
+		for k in 0..=255 {
+		    let array = [a, b, c, d, e, f, g, h, i, j, k];
+		    let addr = encode_11(&array);
+		    assert!(unsafe { std::str::from_utf8_unchecked(&addr) }.len() == 11);
+		}}}}}}}}}}}
+	}
+}
