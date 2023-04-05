@@ -8,6 +8,7 @@ use monero::{
 	Address,
 };
 use curve25519_dalek::scalar::Scalar;
+use curve25519_dalek::edwards::EdwardsPoint;
 use curve25519_dalek::constants::ED25519_BASEPOINT_TABLE;
 use std::sync::{
 	Arc,
@@ -18,7 +19,12 @@ use std::sync::atomic::{
 };
 //--------------------------------------------------------------------------------------------------- Constants.
 // Mainnet Monero Network.
-const NETWORK: &[u8] = &[18];
+const NETWORK_BYTE: u8 = 18;
+// Mainnet Monero Network.
+const NETWORK_ARRAY: &[u8] = &[18];
+// How many `EdwardsPoint`'s to
+// compress in batch in one go.
+const BATCH_SIZE: usize = 10_000;
 
 //---------------------------------------------------------------------------------------------------- Spawn worker threads.
 #[inline(always)]
@@ -72,13 +78,38 @@ fn calculate(
 	let mut tries: u64 = 0;
 
 	loop {
-		// Process in `10_000` iteration batches.
-		for _ in 0..10_000 {
-			// Calculate 1st half of Monero address.
-			let addr = &base58_monero::encode(&[NETWORK, point.compress().as_bytes()].concat()).unwrap()[..=43];
+		// Batch compress the `EdwardsPoint`'s.
+		let mut eds: Vec<EdwardsPoint> = Vec::with_capacity(BATCH_SIZE);
+		for i in 0..BATCH_SIZE {
+			eds.push(point);
+			point += offset;
+		}
+		let y_points = EdwardsPoint::batch_compress_edwards(&mut eds);
+
+		// Iterate over `CompressedEdwardsY` (public key)
+		for y in y_points {
+			// Calculate 1st `11` characters of Monero address.
+			let y = y.as_bytes();
+			let bytes: [u8; 11] = [
+				NETWORK_BYTE,
+				y[0],
+				y[1],
+				y[2],
+				y[3],
+				y[4],
+				y[5],
+				y[6],
+				y[7],
+				y[8],
+				y[9],
+			];
+
+			let addr = &crate::encode::encode_11(&bytes);
 
 			// Check for regex match.
-			if regex.is_match(&addr) {
+			// SAFETY:
+			// The input is known UTF-8 compatible bytes.
+			if regex.is_match(unsafe { &std::str::from_utf8_unchecked(&addr[..]) }) {
 				// If found, signal to other threads.
 				die.store(true, std::sync::atomic::Ordering::SeqCst);
 
@@ -98,7 +129,6 @@ fn calculate(
 
 			// Else, increment.
 			tries += 1;
-			point += offset;
 		}
 
 		// Exit if `die` signal is set.
@@ -107,7 +137,7 @@ fn calculate(
 		}
 
 		// Increment `iteration`.
-		iter.fetch_add(10_000, std::sync::atomic::Ordering::SeqCst);
+		iter.fetch_add(BATCH_SIZE as u64, std::sync::atomic::Ordering::SeqCst);
 	}
 }
 
