@@ -9,6 +9,7 @@ mod threads;
 mod regexes;
 mod pattern;
 mod speed;
+mod encode;
 
 fn main() {
 	// Handle `CLI`.
