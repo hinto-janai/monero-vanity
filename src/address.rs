@@ -25,6 +25,7 @@ const NETWORK_ARRAY: &[u8] = &[18];
 // How many `EdwardsPoint`'s to
 // compress in batch in one go.
 const BATCH_SIZE: usize = 10_000;
+const BATCH_SIZE_U64: u64 = BATCH_SIZE as u64;
 
 //---------------------------------------------------------------------------------------------------- Spawn worker threads.
 #[inline(always)]
@@ -137,7 +138,7 @@ fn calculate(
 		}
 
 		// Increment `iteration`.
-		iter.fetch_add(BATCH_SIZE as u64, std::sync::atomic::Ordering::SeqCst);
+		iter.fetch_add(BATCH_SIZE_U64, std::sync::atomic::Ordering::SeqCst);
 	}
 }
 
