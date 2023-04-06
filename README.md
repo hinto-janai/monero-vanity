@@ -133,7 +133,7 @@ Enter the private key and the generated wallet will have the address found.
 - `I`, `O`, `l`, `0`, `+`, `/` are invalid characters in [Monero addresses](https://monerodocs.org/cryptography/base58)
 - Using slightly less than max threads might be faster
 
-`monero-vanity` automatically prefixes your input with `^4.` and suffixes it with `.*$` so that your PATTERN starts from the 3rd character until the 43rd character of the address.
+`monero-vanity` automatically prefixes your input with `^4.` and suffixes it with `.*$` so that your PATTERN starts from the 3rd character until the 11th character of the address.
 
 Example input: `hinto`  
 Actual regex used: `^4.hinto.*$`
