@@ -13,7 +13,10 @@ use crate::threads::{
 use crate::state::State;
 use regex::Regex;
 use std::io::Write;
-use readable::Unsigned;
+use readable::{
+	Unsigned,
+	Time,
+};
 
 //---------------------------------------------------------------------------------------------------- CLI
 const ABOUT: &str =
@@ -158,16 +161,19 @@ impl Cli {
 				println!("Private Spend Key | {}", m.1);
 				println!("Private View Key  | {}", m.2);
 				println!("Tries             | {}", Unsigned::from(iter));
-				println!("Speed             | {} keys per second\n", Unsigned::from(crate::speed::calculate(&state.start, iter)));
+				println!("Speed             | {} keys per second", Unsigned::from(crate::speed::calculate(&state.start, iter)));
+				println!("Elapsed           | {}\n", Time::from(&state.start.elapsed()));
 				println!("Recover with: ./monero-wallet-cli --generate-from-spend-key YOUR_WALLET_NAME");
 				println!("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
 				std::process::exit(0);
 			}
 
 			print!(
-				"\rTries: [{}] | Speed: [{} keys per second]",
+				"{}[2K\rTries: [{}] | Speed: [{} keys per second] | Elapsed: [{}]",
+				27 as char,
 				Unsigned::from(iter),
 				Unsigned::from(crate::speed::calculate(&state.start, iter)),
+				Time::from(&state.start.elapsed()),
 			);
 			std::io::stdout().lock().flush();
 
