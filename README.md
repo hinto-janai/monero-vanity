@@ -41,11 +41,11 @@ Use [known, good software](https://www.getmonero.org/downloads) for generating a
 ## Comparison
 *Tested with: Ryzen 5950x, GTX 1660 Ti*
 
-| Generator                                                           | Hardware needed        | Regex | Calculates seed | Normal speed     | Regex speed |
-|---------------------------------------------------------------------|------------------------|-------|-----------------|------------------|-------------|
-| [vanity-monero](https://github.com/monero-ecosystem/vanity-monero)  | CPU (x86, 32/64-bit)   | Yes   | Yes             | 400k/sec         | 170k/sec
-| **[monero-vanity](https://github.com/hinto-janai/monero-vanity)**   | CPU (x86, 64-bit)      | Yes   | No              | 72 million/sec   | 72 million/sec
-| [vanity-xmr-cuda](https://github.com/SChernykh/vanity_xmr_cuda)     | NVIDIA GPU (with CUDA) | No    | No              | 8.1 million/sec  |
+| Generator | Hardware | Regex | Seed | [Split-key](https://github.com/hinto-janai/monero-vanity/issues/1) | Character match limit | Normal speed | Regex speed |
+|---------------------------------------------------------------------|----------------------|-------|------|-----------|-----------------------|------------------|-------------|
+| [vanity-monero](https://github.com/monero-ecosystem/vanity-monero)  | CPU (x86, 32/64-bit) | 🟢    | 🟢   | 🟢        | None                  | 400k/sec         | 170k/sec
+| **[monero-vanity](https://github.com/hinto-janai/monero-vanity)**   | CPU (x86, 64-bit)    | 🟢    | 🔴   | 🔴        | `1-11`                | 72 million/sec   | 72 million/sec
+| [vanity-xmr-cuda](https://github.com/SChernykh/vanity_xmr_cuda)     | NVIDIA CUDA GPU      | 🔴    | 🔴   | 🔴        | None                  | 8.1 million/sec  |
 
 The speed comes from:
 - Batched `EdwardsPoint` operations
