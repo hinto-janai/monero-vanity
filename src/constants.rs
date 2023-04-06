@@ -25,12 +25,12 @@ pub const SECOND: std::time::Duration = std::time::Duration::from_secs(1);
 //---------------------------------------------------------------------------------------------------- Text
 pub const THIRD: &str =
 r#"monero-vanity automatically prefixes your input
-with `^4.` and suffixes it with `.*$` so that
+with `^..` and suffixes it with `.*$` so that
 your PATTERN starts from the 3rd character
-until the 43rd character of the address.
+until the 11th character of the address.
 
 Example input: `hinto`
-Actual regex used: `^4.hinto.*$`"#;
+Actual regex used: `^..hinto.*$`"#;
 
 pub const FIRST: &str =
 r#"This disables the prefixing + suffixing when using `Third`

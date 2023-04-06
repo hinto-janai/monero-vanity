@@ -235,7 +235,7 @@ impl eframe::App for Gui {
 					if ui.add_sized([w, text], Button::new("Start")).clicked() {
 						// Start.
 						let regex = match self.pattern_type {
-							PatternType::Third => format!("^4.{}.*$", self.pattern),
+							PatternType::Third => format!("^..{}.*$", self.pattern),
 							PatternType::First => self.pattern.to_string(),
 						};
 

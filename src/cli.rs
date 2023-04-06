@@ -21,12 +21,12 @@ use readable::{
 //---------------------------------------------------------------------------------------------------- CLI
 const ABOUT: &str =
 r#"monero-vanity automatically prefixes your input
-with `^4.` and suffixes it with `.*$` so that
+with `^..` and suffixes it with `.*$` so that
 your PATTERN starts from the 3rd character
-until the 43rd character of the address.
+until the 11th character of the address.
 
 Example input: `hinto`
-Actual regex used: `^4.hinto.*$`
+Actual regex used: `^..hinto.*$`
 
 To disable this, use `--first`.
 Warning: this puts you in full control of the regex,
@@ -47,7 +47,7 @@ pub struct Cli {
 	#[arg(long, short)]
 	pattern: String,
 
-	/// Start from 1st character instead of: ^4.PATTERN.*$
+	/// Start from 1st character instead of: ^..PATTERN.*$
 	#[arg(long, short)]
 	first: bool,
 
@@ -87,7 +87,7 @@ impl Cli {
 		}
 		let pattern_string = match cli.first {
 			true  => cli.pattern,
-			false => format!("^4.{}.*$", cli.pattern),
+			false => format!("^..{}.*$", cli.pattern),
 		};
 		let pattern = match Regex::new(&pattern_string) {
 			Ok(p) => p,
