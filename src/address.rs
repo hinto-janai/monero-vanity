@@ -90,20 +90,9 @@ fn calculate(
 		// Iterate over `CompressedEdwardsY` (public key)
 		for y in y_points {
 			// Calculate 1st `11` characters of Monero address.
-			let y = y.as_bytes();
-			let bytes: [u8; 11] = [
-				NETWORK_BYTE,
-				y[0],
-				y[1],
-				y[2],
-				y[3],
-				y[4],
-				y[5],
-				y[6],
-				y[7],
-				y[8],
-				y[9],
-			];
+			let mut bytes = [0_u8; 11];
+			bytes[0] = NETWORK_BYTE;
+			bytes[1..].copy_from_slice(&y.as_bytes()[0..10]);
 
 			let addr = &crate::encode::encode_11(&bytes);
 
