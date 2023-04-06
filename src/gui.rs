@@ -252,6 +252,7 @@ impl eframe::App for Gui {
 							&self.state.iter,
 							&self.state.die,
 							&self.state.pattern,
+							None
 						);
 					}
 				});

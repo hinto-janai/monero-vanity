@@ -5,11 +5,12 @@ use monero::{
 	Network,
 	PrivateKey,
 	KeyPair,
-	Address,
+	Address, PublicKey,
 };
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::edwards::EdwardsPoint;
 use curve25519_dalek::constants::ED25519_BASEPOINT_TABLE;
+use std::str::FromStr;
 use std::sync::{
 	Arc,
 };
@@ -35,6 +36,7 @@ pub fn spawn_workers(
 	iter: &Arc<AtomicU64>,
 	die: &Arc<AtomicBool>,
 	regex: &Regex,
+	split_key: Option<EdwardsPoint>
 ) {
 	for _ in 0..threads {
 		let to_main = to_main.clone();
@@ -42,7 +44,7 @@ pub fn spawn_workers(
 		let die     = die.clone();
 		let regex   = regex.clone();
 
-		std::thread::spawn(move || calculate(to_main, iter, die, regex));
+		std::thread::spawn(move || calculate(to_main, iter, die, regex, split_key));
 	}
 }
 
@@ -57,6 +59,20 @@ fn rand_scalar() -> Scalar {
 fn rand_priv() -> PrivateKey {
 	PrivateKey { scalar: rand_scalar() }
 }
+//---------------------------------------------------------------------------------------------------- Split key calculations.
+pub fn calculate_part_split_key() -> (String, String) {
+	let private = rand_priv();
+	let public = PublicKey::from_private_key(&private);
+	(private.to_string(), public.to_string())
+}
+
+pub fn join_split_key(key_1: PrivateKey, key_2: PrivateKey) -> (String, String, String) {
+	let spend = key_1 + key_2;
+	let view = rand_priv();
+	let pair = KeyPair { view, spend };
+	let address = Address::from_keypair(Network::Mainnet, &pair);
+	(address.to_string(), spend.to_string(), view.to_string())
+}
 
 //---------------------------------------------------------------------------------------------------- Calculate the address.
 #[inline(always)]
@@ -65,12 +81,16 @@ fn calculate(
 	iter: Arc<AtomicU64>,
 	die: Arc<AtomicBool>,
 	regex: Regex,
+	split_key: Option<EdwardsPoint>,
 ) {
 	// Seed.
 	let seed = rand_scalar();
 
 	// Base Point.
 	let mut point = &seed * &ED25519_BASEPOINT_TABLE;
+	if let Some(split_key) = split_key {
+		point += split_key;
+	}
 
 	// Offset.
 	let offset = &Scalar::from(1_u8) * &ED25519_BASEPOINT_TABLE;
