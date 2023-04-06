@@ -218,7 +218,7 @@ impl Cli {
 			if let Ok(m) = from.try_recv() {
 				let mut output = String::new();
 				output +=     &format!("Tries                      | {} \n", Unsigned::from(iter));
-				output +=     &format!("Speed                      | {} keys per second", Unsigned::from(crate::speed::calculate(&state.start, iter)));
+				output +=     &format!("Speed                      | {} keys per second\n", Unsigned::from(crate::speed::calculate(&state.start, iter)));
 				output +=     &format!("Elapsed                    | {}\n", Time::from(&state.start.elapsed()));
 				if state.split_key.is_some() {
 					output += &format!("Calculated Split Key part  | {}\n", m.1);
