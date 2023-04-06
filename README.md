@@ -22,6 +22,7 @@ https://user-images.githubusercontent.com/101352116/229327380-52a7f8a2-fcf7-4eb0
 
 ---
 
+* [Warning](#Warning)
 * [Comparison](#Comparison)
 * [Estimate](#Estimate)
 * [GUI Usage](#GUI-Usage)
@@ -29,9 +30,13 @@ https://user-images.githubusercontent.com/101352116/229327380-52a7f8a2-fcf7-4eb0
 * [Install](#Install)
 * [Implementation](#Implementation)
 * [Build](#Build)
-* [Warning](#Warning)
 
 ---
+
+## Warning
+**I am not a cryptographer, nor was this code audited.**
+
+Use [known, good software](https://www.getmonero.org/downloads) for generating a wallet with substantial amounts of money.
 
 ## Comparison
 *Tested with: Ryzen 5950x, GTX 1660 Ti*
@@ -102,7 +107,7 @@ Usage: monero-vanity [--OPTIONS]
 Options:
   -t, --threads <THREADS>  How many threads to use [default: HALF_THREADS]
   -p, --pattern <PATTERN>  Address regex pattern to look for
-  -f, --first              Start from 1st character instead of: ^4.PATTERN.*$
+  -f, --first              Start from 1st character instead of: ^..PATTERN.*$
   -r, --refresh <REFRESH>  How many milliseconds in-between output refreshes [default: 500]
   -v, --version            Print version
   -h, --help               Print help (see more with '--help')
@@ -116,7 +121,7 @@ Example 1 - Basic pattern using half threads:
 
 Example 2 - Advanced regex pattern using half threads:
 ```bash
-./monero-vanity --first --pattern "^4(4|8)h(i|1)nto.*$"
+./monero-vanity --first --pattern "^.(4|8)h(i|1)nto.*$"
 
 > 48hinto...
 ```
@@ -133,10 +138,10 @@ Enter the private key and the generated wallet will have the address found.
 - `I`, `O`, `l`, `0`, `+`, `/` are invalid characters in [Monero addresses](https://monerodocs.org/cryptography/base58)
 - Using slightly less than max threads might be faster
 
-`monero-vanity` automatically prefixes your input with `^4.` and suffixes it with `.*$` so that your PATTERN starts from the 3rd character until the 11th character of the address.
+`monero-vanity` automatically prefixes your input with `^..` and suffixes it with `.*$` so that your PATTERN starts from the 3rd character until the 11th character of the address.
 
 Example input: `hinto`  
-Actual regex used: `^4.hinto.*$`
+Actual regex used: `^..hinto.*$`
 
 To disable this, use `--first`.
 
@@ -180,8 +185,3 @@ Optimized for your specific CPU (up to 15%~ speed increase):
 ```
 RUSTFLAGS="-C target-cpu=native" cargo build --release
 ```
-
-## Warning
-I am not a cryptographer, nor was this code audited.
-
-Use this program at your own risk.
