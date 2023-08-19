@@ -1,6 +1,7 @@
 //---------------------------------------------------------------------------------------------------- Use
 use clap::Parser;
 use std::process::exit;
+use std::str::FromStr;
 use crate::constants::{
 	VERSION,
 	COMMIT,
@@ -44,7 +45,7 @@ pub struct Cli {
 	/// Address regex pattern to look for
 	///
 	/// E.g: `hinto` would find an address: `44hinto...`
-	#[arg(long, short)]
+	#[arg(long, short, default_value_t = String::new())]
 	pattern: String,
 
 	/// Start from 1st character instead of: ^..PATTERN.*$
@@ -54,6 +55,27 @@ pub struct Cli {
 	/// How many milliseconds in-between output refreshes
 	#[arg(long, short, default_value_t = 500)]
 	refresh: u64,
+
+	/// Generates a new split key that can be given out to allow others
+	/// to help you find an address while keeping the private key hidden
+	///
+	/// (experimental)
+	#[arg(long, short)]
+	gen_private_split_key: bool,
+
+	/// Calculates addresses for the provided public split
+	/// key instead of our own generated private key
+	///
+	/// (experimental)
+	#[arg(long, short)]
+	calculate_split_key: Option<String>,
+
+	/// Joins the private part of a split key with the
+	/// calculated part to get the generated private key
+	///
+	/// (experimental)
+	#[arg(long, short, num_args(2))]
+	join_split_key: Option<Vec<String>>
 }
 
 impl Cli {
@@ -61,6 +83,12 @@ impl Cli {
 	#[inline(always)]
 	pub fn handle_args() {
 		let cli = Self::parse();
+		if cli.gen_private_split_key {
+			Self::gen_private_split_key()
+		}
+		if let Some(keys) = cli.join_split_key {
+			Self::join_split_key(keys)
+		}
 
 		// Test for `pattern` validity.
 		if cli.pattern.is_empty() {
@@ -94,6 +122,13 @@ impl Cli {
 			Err(e) => { eprintln!("ERROR: Regex failed to build: {}", e); exit(8); },
 		};
 
+		let split_key = cli.calculate_split_key.map(|key|
+			match monero::PublicKey::from_str(&key) {
+				Ok(key) => key.point.decompress().expect("monero-rs decompresses public keys so all `PublicKey`s will be valid points"),
+				Err(e) => { eprintln!("ERROR: Public key entered is not a valid point: {}", e); exit(9); }
+			}
+		);
+
 		// Test for `thread` validity.
 		let threads = {
 			// Use half if `0`.
@@ -120,11 +155,39 @@ impl Cli {
 			threads,
 			pattern,
 			pattern_string,
+			split_key,
 			..Default::default()
 		};
 
 		// Continue to loop.
 		Self::cli_loop(state, cli.refresh);
+	}
+
+	fn gen_private_split_key() {
+		let (private_part, public_part) = crate::address::calculate_part_split_key();
+		let mut output = String::new();
+		output += &format!("Private Split Key (keep hidden)   | {private_part}\n");
+		output += &format!("Public Split Key (give this out)  | {public_part}\n\n");
+		output += &format!("Generate the other part with: ./monero-vanity --calculate-split-key {public_part} --pattern <PATTERN_YOU_WANT>");
+		successful_exit(&output)
+	}
+
+	fn join_split_key(keys: Vec<String>) {
+		let keys: Vec<monero::PrivateKey> = keys.iter().map(|key|
+			match monero::PrivateKey::from_str(&key) {
+				Ok(key) => key,
+				Err(e) => { eprintln!("ERROR: Private key part entered is not a valid scalar: {e}"); exit(10); }
+			}
+		).collect();
+		let m = crate::address::join_split_key(keys[0], keys[1]);
+
+		let mut output = String::new();
+		output += &format!("Monero Address             | {}\n", m.0);
+		output += &format!("Private Spend Key          | {}\n", m.1);
+		output += &format!("Private View Key           | {}\n\n", m.2);
+		output += &format!("Recover with: ./monero-wallet-cli --generate-from-spend-key <YOUR_WALLET_NAME>");
+		successful_exit(&output)
+
 	}
 
 	//-------------------------------------------------- CLI loop.
@@ -142,6 +205,7 @@ impl Cli {
 			&state.iter,
 			&state.die,
 			&state.pattern,
+			state.split_key,
 		);
 
 		println!(
@@ -156,16 +220,20 @@ impl Cli {
 			let iter = state.iter.load(std::sync::atomic::Ordering::SeqCst);
 
 			if let Ok(m) = from.try_recv() {
-				println!("\n\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-				println!("Monero Address    | {}", m.0);
-				println!("Private Spend Key | {}", m.1);
-				println!("Private View Key  | {}", m.2);
-				println!("Tries             | {}", Unsigned::from(iter));
-				println!("Speed             | {} keys per second", Unsigned::from(crate::speed::calculate(&state.start, iter)));
-				println!("Elapsed           | {}\n", Time::from(&state.start.elapsed()));
-				println!("Recover with: ./monero-wallet-cli --generate-from-spend-key YOUR_WALLET_NAME");
-				println!("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-				std::process::exit(0);
+				let mut output = String::new();
+				output +=     &format!("Tries                     | {} \n", Unsigned::from(iter));
+				output +=     &format!("Speed                     | {} keys per second\n", Unsigned::from(crate::speed::calculate(&state.start, iter)));
+				output +=     &format!("Elapsed                   | {}\n", Time::from(&state.start.elapsed()));
+				if state.split_key.is_some() {
+					output += &format!("Calculated Split Key part | {}\n\n", m.1);
+					output += &format!("Join keys with: ./monero-vanity --join-split-key {} <PRIVATE_SPLIT_KEY_PART>", m.1);
+				} else {
+					output += &format!("Monero Address            | {}\n", m.0);
+					output += &format!("Private Spend Key         | {}\n", m.1);
+					output += &format!("Private View Key          | {}\n\n", m.2);
+					output += &format!("Recover with: ./monero-wallet-cli --generate-from-spend-key <YOUR_WALLET_NAME>");
+				}
+				successful_exit(&output)
 			}
 
 			print!(
@@ -180,6 +248,13 @@ impl Cli {
 			std::thread::sleep(std::time::Duration::from_millis(refresh));
 		}
 	}
+}
+
+fn successful_exit(output: &str) {
+	println!("\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+	println!("{output}");
+	println!("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+	std::process::exit(0);
 }
 
 //---------------------------------------------------------------------------------------------------- TESTS

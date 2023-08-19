@@ -1,12 +1,7 @@
 //---------------------------------------------------------------------------------------------------- Use
 use regex::Regex;
-use std::sync::{
-	Arc,
-};
-use std::sync::atomic::{
-	AtomicU64,
-	AtomicBool,
-};
+use std::sync::atomic::{AtomicBool, AtomicU64};
+use std::sync::Arc;
 use std::time::Instant;
 
 //---------------------------------------------------------------------------------------------------- State
@@ -19,6 +14,8 @@ pub struct State {
 	pub pattern: Regex,
 	/// The address regex pattern to look for (as a String).
 	pub pattern_string: String,
+	/// The optional public key part of a split key we are calculating
+	pub split_key: Option<curve25519_dalek::edwards::EdwardsPoint>,
 	/// How many iterations are we on?
 	pub iter: Arc<AtomicU64>,
 
@@ -45,6 +42,7 @@ impl Default for State {
 			threads: 1,
 			pattern: Regex::new("").unwrap(),
 			pattern_string: "".to_string(),
+			split_key: None,
 			iter: Arc::new(AtomicU64::new(0)),
 			iterating: false,
 			speed: 0,
