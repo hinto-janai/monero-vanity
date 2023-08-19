@@ -27,6 +27,7 @@ https://user-images.githubusercontent.com/101352116/229327380-52a7f8a2-fcf7-4eb0
 * [Estimate](#Estimate)
 * [GUI Usage](#GUI-Usage)
 * [CLI Usage](#CLI-Usage)
+* [Split Key](#split-key)
 * [Install](#Install)
 * [Implementation](#Implementation)
 * [Build](#Build)
@@ -41,10 +42,10 @@ Use [known, good software](https://www.getmonero.org/downloads) for generating a
 ## Comparison
 *Tested with: Ryzen 5950x, GTX 1660 Ti*
 
-| Generator | Hardware | Regex | Seed | [Split-key](https://github.com/hinto-janai/monero-vanity/issues/1) | Character match limit | Normal speed | Regex speed |
+| Generator | Hardware | Regex | Seed | [Split-key](https://en.bitcoin.it/wiki/Split-key_vanity_address) | Character match limit | Normal speed | Regex speed |
 |---------------------------------------------------------------------|----------------------|-------|------|-----------|-----------------------|------------------|-------------|
 | [vanity-monero](https://github.com/monero-ecosystem/vanity-monero)  | CPU (x86, 32/64-bit) | 🟢    | 🟢   | 🟢        | None                  | 400k/sec         | 170k/sec
-| **[monero-vanity](https://github.com/hinto-janai/monero-vanity)**   | CPU (x86, 64-bit)    | 🟢    | 🔴   | 🔴        | `1-11`                | 72 million/sec   | 72 million/sec
+| **[monero-vanity](https://github.com/hinto-janai/monero-vanity)**   | CPU (x86, 64-bit)    | 🟢    | 🔴   | 🟢        | `1-11`                | 72 million/sec   | 72 million/sec
 | [vanity-xmr-cuda](https://github.com/SChernykh/vanity_xmr_cuda)     | NVIDIA CUDA GPU      | 🔴    | 🔴   | 🔴        | None                  | 8.1 million/sec  |
 
 The speed comes from:
@@ -146,6 +147,57 @@ Actual regex used: `^..hinto.*$`
 To disable this, use `--first`.
 
 Warning: this puts you in full control of the regex, you can input any value, even an impossible one.
+
+## Split Key
+The CLI version has 3 extra options:
+- `--gen-private-split-key` -> Generates a new split key that can be given out to allow others to help you find an address while keeping the private key hidden
+- `--calculate-split-key` -> Calculates addresses for the provided public split key instead of our own generated private key
+- `--join-split-key` -> Joins the private part of a split key with the calculated part to get the generated private key
+
+This lets you generate [split keys](https://en.bitcoin.it/wiki/Split-key_vanity_address).
+
+To use, first generate the split keys:
+```
+./monero-vanity --gen-private-split-key
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+Private Split Key (keep hidden)   | f2149a0c0d09504b71e54cb91358f9f38d10e41d61dea5049dc835dc84204403
+Public Split Key (give this out)  | 219126f1bd60e5c0593b3fd80b7493ad71bbb7cd48692e8fb21ab9357294ad44
+
+Generate the other part with: ./monero-vanity --calculate-split-key 219126f1bd60e5c0593b3fd80b7493ad71bbb7cd48692e8fb21ab9357294ad44 --pattern <PATTERN_YOU_WANT>
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+```
+Then give the `Public Split Key` out to whoever is doing the computation to find the desired pattern:
+```
+./monero-vanity --calculate-split-key 219126f1bd60e5c0593b3fd80b7493ad71bbb7cd48692e8fb21ab9357294ad44 --pattern hinto
+Threads | 16
+Refresh | 500ms
+Pattern | ^..hinto.*$
+
+Tries: [120,510,000] | Speed: [60,195,959 keys per second] | Elapsed: [2 seconds]
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+Tries                     | 121,750,000
+Speed                     | 48,658,219 keys per second
+Elapsed                   | 2 seconds
+Calculated Split Key part | 41520d03e6465db6e94a8be5627663bfc17d7942e31e995f49d4fce0f509fc06
+
+Join keys with: ./monero-vanity --join-split-key 41520d03e6465db6e94a8be5627663bfc17d7942e31e995f49d4fce0f509fc06 <PRIVATE_SPLIT_KEY_PART>
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+```
+They can now hand you this key `415...` and you can join it with your original `Private Split Key`:
+```
+target/release/monero-vanity --join-split-key 41520d03e6465db6e94a8be5627663bfc17d7942e31e995f49d4fce0f509fc06 f2149a0c0d09504b71e54cb91358f9f38d10e41d61dea5049dc835dc84204403
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+Monero Address             | 45hintoZuvbAVmGKGzysC3J3wuiqU9tfZHYspY5Z2LaKLzVt1awQU3WdLnG1KgPr23iXiQ8gDyG341ox2pWTtYmNLuRThP1
+Private Spend Key          | 3367a70ff34fad015b30d89e76ce5cb34f8e5d6044fd3e64e69c32bd7a2a400a
+Private View Key           | 72be5d4478121eba07f3b5ee88db11eeb67a1cb7b3229c62cdb110cc9da1a40f
+
+Recover with: ./monero-wallet-cli --generate-from-spend-key <YOUR_WALLET_NAME>
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+```
+Which will output your desired address `45hinto...` that you can recover.
 
 ## Install
 Download [here.](https://github.com/hinto-janai/monero-vanity/releases)
