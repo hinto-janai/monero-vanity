@@ -202,18 +202,6 @@ Which will output your desired address `45hinto...` that you can recover.
 ## Install
 Download [here.](https://github.com/hinto-janai/monero-vanity/releases)
 
-<!--### Cargo-->
-<!--If you have `cargo`, you can install with:-->
-<!--```bash-->
-<!--cargo install monero-vanity-->
-<!--```-->
-<!---->
-### Arch
-If you're using Arch Linux, you can install from the [AUR](https://aur.archlinux.org/packages/monero-vanity-bin) with:
-```bash
-paru monero-vanity
-```
-
 ## Implementation
 1. [Random `[u8; 64]` is generated (512 bits/64 bytes)](https://github.com/hinto-janai/monero-vanity/blob/43d0dbedb23bbe157ea76704e848d4708531ff5e/src/address.rs#L69)
 2. [Scalar is created by reducing the above bytes](https://github.com/hinto-janai/monero-vanity/blob/43d0dbedb23bbe157ea76704e848d4708531ff5e/src/address.rs#L53)

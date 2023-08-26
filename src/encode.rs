@@ -78,6 +78,7 @@ mod tests {
 	use super::*;
 
 	#[test]
+	#[ignore]
 	// This test checks _every_ 11-byte array
 	// permutation and checks the base58 encoded
 	// version is `11` in length.

@@ -19,7 +19,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [windows-2019, macos-11, ubuntu-20.04]
+        os: [windows-2022, macos-11, ubuntu-20.04]
 
     steps:
     - name: Checkout
@@ -59,7 +59,7 @@ jobs:
         fi
         cargo build --release
 
-    - name: Compress (GUI)
+    - name: Compress
       shell: bash
       run: |
         mkdir OUTPUT
@@ -67,16 +67,19 @@ jobs:
 
         if [ "$RUNNER_OS" == "Linux" ]; then
           # Tar
-          tar -czpf "monero-vanity-v${VERSION}-linux-x64.tar.gz" target/release/monero-vanity
-          mv "monero-vanity-v${VERSION}-linux-x64.tar.gz" OUTPUT/
+          cd target/release/
+          tar -czpf "monero-vanity-v${VERSION}-linux-x64.tar.gz" monero-vanity
+          mv "monero-vanity-v${VERSION}-linux-x64.tar.gz" ../../OUTPUT/
         elif [ "$RUNNER_OS" == "macOS" ]; then
           # x64
-          tar -czpf "monero-vanity-v${VERSION}-macos-x64.tar.gz" target/release/monero-vanity
-          mv "monero-vanity-v${VERSION}-macos-x64.tar.gz" OUTPUT/
+          cd target/release/
+          tar -czpf "monero-vanity-v${VERSION}-macos-x64.tar.gz" monero-vanity
+          mv "monero-vanity-v${VERSION}-macos-x64.tar.gz" ../../OUTPUT/
 
           # ARM64
-          tar -czpf "monero-vanity-v${VERSION}-macos-arm64.tar.gz" target/aarch64-apple-darwin/release/monero-vanity
-          mv "monero-vanity-v${VERSION}-macos-arm64.tar.gz" OUTPUT/
+          cd ../aarch64-apple-darwin/release/
+          tar -czpf "monero-vanity-v${VERSION}-macos-arm64.tar.gz" monero-vanity
+          mv "monero-vanity-v${VERSION}-macos-arm64.tar.gz" ../../../OUTPUT/
         elif [ "$RUNNER_OS" == "Windows" ]; then
           # Zip
           cd target/release
